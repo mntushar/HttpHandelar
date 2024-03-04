@@ -5,6 +5,8 @@ namespace DNE.CS.Inventory.Library.Interface;
 public interface IHttpService
 {
     Task<HttpResponse> GetAsync(string uri, string accessToken);
+    Task<HttpResponse> GetAsync(string uri,
+        string accessToken, CancellationToken cancellationToken);
     Task<HttpResponse> GetAsync(string uri);
     Task<HttpResponse> PostAsync(string uri, string accessToken,
         object? value = null);

@@ -40,6 +40,14 @@ public class HttpService : IHttpService
         return await SendRequestAsync(request, accessToken);
     }
 
+    public async Task<HttpResponse> GetAsync(string uri,
+        string accessToken, CancellationToken cancellationToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        return await SendRequestAsync(request, accessToken, cancellationToken);
+    }
+
     public async Task<HttpResponse> GetAsync(string uri)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -99,6 +107,38 @@ public class HttpService : IHttpService
     }
 
     private async Task<HttpResponse> SendRequestAsync(HttpRequestMessage request,
+        string accessToken, CancellationToken cancellationToken)
+    {
+        HttpResponse httpResponse = new HttpResponse();
+
+        try
+        {
+            var isApiUrl = request.RequestUri?.IsAbsoluteUri ?? false;
+
+            if (!string.IsNullOrEmpty(accessToken) && isApiUrl)
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);
+
+            httpResponse.IsSuccess = response.IsSuccessStatusCode;
+            httpResponse.HttpStatusCode = response.StatusCode;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                httpResponse.Error = response.Content.ReadAsStringAsync().Result;
+                return httpResponse;
+            }
+
+            httpResponse.Data = response.Content.ReadAsStringAsync().Result;
+            return httpResponse;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    private async Task<HttpResponse> SendRequestAsync(HttpRequestMessage request,
         string accessToken)
     {
         HttpResponse httpResponse = new HttpResponse();
@@ -110,7 +150,7 @@ public class HttpService : IHttpService
             if (!string.IsNullOrEmpty(accessToken) && isApiUrl)
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            using var response = await _httpClient.SendAsync(request);
+            using HttpResponseMessage response = await _httpClient.SendAsync(request);
 
             httpResponse.IsSuccess = response.IsSuccessStatusCode;
             httpResponse.HttpStatusCode = response.StatusCode;
