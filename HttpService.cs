@@ -1,5 +1,6 @@
 ﻿using DNE.CS.Inventory.Library.Interface;
 using Microsoft.AspNetCore.Components;
+using Microsoft.IdentityModel.Tokens;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -53,6 +54,13 @@ public class HttpService : IHttpService
         var request = new HttpRequestMessage(HttpMethod.Get, uri);
 
         return await SendRequestAsync(request);
+    }
+
+    public async Task<HttpResponse> GetCookieAsync(string uri, string cookie, string cookieName)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+        return await SendRequestCookieAsync(request, cookie, cookieName);
     }
 
     public async Task<HttpResponse> PostAsync(string uri,
@@ -149,6 +157,41 @@ public class HttpService : IHttpService
 
             if (!string.IsNullOrEmpty(accessToken) && isApiUrl)
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using HttpResponseMessage response = await _httpClient.SendAsync(request);
+
+            httpResponse.IsSuccess = response.IsSuccessStatusCode;
+            httpResponse.HttpStatusCode = response.StatusCode;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                httpResponse.Error = response.Content.ReadAsStringAsync().Result;
+                return httpResponse;
+            }
+
+            httpResponse.Data = response.Content.ReadAsStringAsync().Result;
+            return httpResponse;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    private async Task<HttpResponse> SendRequestCookieAsync(HttpRequestMessage request,
+        string cookie, string cookieName)
+    {
+        HttpResponse httpResponse = new HttpResponse();
+
+        try
+        {
+            var isApiUrl = request.RequestUri?.IsAbsoluteUri ?? false;
+
+            if (!string.IsNullOrEmpty(cookie) && isApiUrl && !cookieName.IsNullOrEmpty())
+            {
+                cookie = $"{cookieName}={cookie};";
+                request.Headers.Add("Cookie", cookie);
+            }
 
             using HttpResponseMessage response = await _httpClient.SendAsync(request);
 

@@ -8,6 +8,7 @@ public interface IHttpService
     Task<HttpResponse> GetAsync(string uri,
         string accessToken, CancellationToken cancellationToken);
     Task<HttpResponse> GetAsync(string uri);
+    Task<HttpResponse> GetCookieAsync(string uri, string cookie, string cookieName);
     Task<HttpResponse> PostAsync(string uri, string accessToken,
         object? value = null);
     Task<HttpResponse> PostAsync(string uri, object? value = null);
