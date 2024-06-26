@@ -14,6 +14,10 @@ public interface IHttpService
     Task<HttpResponse> PostAsync(string uri, object? value = null);
     Task<HttpResponse> PutAsync(string uri, string accessToken,
         object? value = null);
+    Task<FileHttpResponse> PostForFileAsync(string uri,
+        string accessToken, object? value = null);
+    Task<HttpResponse> PostAsync(string uri,
+        string accessToken, MultipartFormDataContent content);
     Task<HttpResponse> PutAsync(string uri, object? value = null);
     Task<HttpResponse> DeleteAsync(string uri, string accessToken);
     Task<HttpResponse> DeleteAsync(string uri);
@@ -25,4 +29,12 @@ public class HttpResponse
     public bool IsSuccess { get; set; } = false;
     public string? Error { get; set; }
     public string? Data { get; set; }
+}
+
+public class FileHttpResponse
+{
+    public HttpStatusCode HttpStatusCode { get; set; }
+    public byte[]? FileBytes { get; set; }
+    public bool IsSuccess { get; set; } = false;
+    public string? Error { get; set; }
 }

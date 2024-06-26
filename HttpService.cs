@@ -76,6 +76,28 @@ public class HttpService : IHttpService
         return await SendRequestAsync(request, accessToken);
     }
 
+    public async Task<FileHttpResponse> PostForFileAsync(string uri,
+        string accessToken, object? value = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, uri);
+
+        if (value != null)
+        {
+            request.Content = new StringContent(JsonSerializer.Serialize(value), Encoding.UTF8, "application/json");
+        }
+
+        return await SendFileRequestAsync(request, accessToken);
+    }
+
+    public async Task<HttpResponse> PostAsync(string uri,
+        string accessToken, MultipartFormDataContent content)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, uri);
+        request.Content = content;
+
+        return await SendRequestAsync(request, accessToken);
+    }
+
     public async Task<HttpResponse> PostAsync(string uri,
         object? value = null)
     {
@@ -170,6 +192,38 @@ public class HttpService : IHttpService
             }
 
             httpResponse.Data = response.Content.ReadAsStringAsync().Result;
+            return httpResponse;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+    }
+
+    private async Task<FileHttpResponse> SendFileRequestAsync(HttpRequestMessage request,
+        string accessToken)
+    {
+        FileHttpResponse httpResponse = new FileHttpResponse();
+
+        try
+        {
+            var isApiUrl = request.RequestUri?.IsAbsoluteUri ?? false;
+
+            if (!string.IsNullOrEmpty(accessToken) && isApiUrl)
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using HttpResponseMessage response = await _httpClient.SendAsync(request);
+
+            httpResponse.IsSuccess = response.IsSuccessStatusCode;
+            httpResponse.HttpStatusCode = response.StatusCode;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                httpResponse.Error = response.Content.ReadAsStringAsync().Result;
+                return httpResponse;
+            }
+
+            httpResponse.FileBytes = await response.Content.ReadAsByteArrayAsync();
             return httpResponse;
         }
         catch (Exception ex)
